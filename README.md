@@ -1,5 +1,5 @@
 # inkyphat_weather
-Python3 Code to display current and near-term weather conditions on an inky pHAT eInk screen Using the [Dark Sky API](https://darksky.net/dev/) and Lukas Kubis's Python wrapper [darkskylib](https://github.com/lukaskubis/darkskylib/). My installation is on a Raspberry Pi Zero W. 
+Python3 Code to display current and near-term weather conditions on an Pimoroni Inky pHAT eInk screen Using the [Dark Sky API](https://darksky.net/dev/) and Lukas Kubis's Python wrapper [darkskylib](https://github.com/lukaskubis/darkskylib/). My installation is on a Raspberry Pi Zero W running headless on my kitchen wall. 
 
 ## Acknowledgements
 - I took inspiration from Alan Cunningham's [Inky pHAT Dark Sky weather display](https://github.com/AlanCunningham/inkyphat-darksky-weather-display/) 
@@ -14,8 +14,8 @@ Python3 Code to display current and near-term weather conditions on an inky pHAT
 - [Pillow](https://pillow.readthedocs.io/en/stable/) imaging library
 
 ## Tips
-- on your own system you may need to adjust the loction of the resource files (the fonts and icons, depending on where you put them). I found that I needed absolute links to make it work properly.
-- I suggest creating a cron job that refreshes the screen every 15 minutes with new data. This is a lot simpler than it sounds, check [here](https://www.ostechnix.com/a-beginners-guide-to-cron-jobs/) for guidance.
+- On your own system you may need to adjust the loction of the resource files (the fonts and icons, depending on where you put them). I found that I needed absolute links n the code to make it work properly.
+- I suggest creating a cron job that refreshes the screen every 15 minutes with new data. This is a lot simpler than it sounds, check [here](https://www.ostechnix.com/a-beginners-guide-to-cron-jobs/) for guidance. I did not see any benefit to more frequent requests.
 
 ## Example
 ![Image](inky-pHAT.png)
