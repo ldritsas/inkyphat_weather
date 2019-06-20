@@ -1,0 +1,154 @@
+# a programme to display today's weather and tomorrow
+# on the inky_display using Lukas Kubis's Python wrapper
+# for the Dark Sky API https://github.com/lukaskubis/darkskylib 
+
+import glob
+from inky import InkyPHAT
+from PIL import Image, ImageFont, ImageDraw
+import datetime
+from datetime import date, timedelta
+from darksky import forecast
+import textwrap
+
+# set the colour of the phat
+inky_display = InkyPHAT('yellow')
+
+# set lat/long for location
+LOCATION = 55.7785, -3.3561
+UNITS = 'uk2'
+
+# set Darksky API Key
+APIKEY= 'd87306861e244d85d019d96174780334'
+
+# Get data from DarkSky
+with forecast (APIKEY, *LOCATION, units=UNITS) as location:
+    # today
+    currentTemp = location['currently']['temperature']
+    upcoming_conditions = location['minutely']['summary']
+    relativeHumidity = location['currently']['humidity']
+    highTemp = location['daily']['data'][0]['temperatureHigh']
+    lowTemp = location['daily']['data'][0]['temperatureLow']
+    iconDesc = location['currently']['icon']
+  
+    # tomorrow 
+    summary2 = location['daily']['data'][1]['summary']
+    iconDesc2 = location['daily']['data'][1]['icon']
+    highTemp2 = location['daily']['data'][1]['temperatureHigh']
+    lowTemp2 = location['daily']['data'][1]['temperatureLow']
+
+# format today'svariables current temp and high and low temps for the day
+temp = '{0:.0f}'.format(currentTemp) + '°'
+currentTempF = round((1.8 * currentTemp) + 32)
+tempF = str(currentTempF) + 'F'
+tempsToday = 'High ' + '{0:.0f}'.format(highTemp) + ' Low ' + '{0:.0f}'.format(lowTemp)
+  
+# tomorrow's variables 
+tempsDay2 = 'High ' + '{0:.0f}'.format(highTemp2) + ' Low ' + '{0:.0f}'.format(lowTemp2)
+
+# Create a new blank image, img, of type P 
+# that is the width and height of the Inky pHAT display,
+# then create a drawing canvas, draw, to which we can draw text and graphics
+img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
+draw = ImageDraw.Draw(img)
+
+# import our fonts
+tempFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Aller_Bd.ttf', 22)
+dayFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Roboto-Black.ttf', 18)
+iconFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Roboto-Medium.ttf', 16)
+dateFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Roboto-Bold.ttf', 14)
+font = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 10)
+smallFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 8)
+smallestFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 7)
+
+# define weekday text
+weekday = date.today()
+day_Name = date.strftime(weekday, '%A')
+day_month_year = date.strftime(weekday, '%-d %B %y')
+
+weekday2 = datetime.date.today() + datetime.timedelta(days=1)
+day2 = date.strftime(weekday2, '%A')
+
+# format the summary texts for today and tomorrow
+currentCondFormatted = textwrap.fill(upcoming_conditions, 16)
+summary2Formatted = textwrap.fill(summary2, 18)
+iconFormatted = textwrap.fill(iconDesc, 7)
+
+# draw some lines
+draw.line((118, 50, 118, 104),2, 4)
+draw.line((118, 50, 212, 50),2, 4)
+
+# draw today's name on left side
+draw.text((3, 3), day_Name, inky_display.BLACK, dayFont)
+
+# draw today's date on left side below today's name
+dayDate = day_month_year
+draw.text((3, 25), dayDate, inky_display.BLACK, dateFont)
+
+#draw current temperature to right of day name and date
+draw.text((105, 8), temp, inky_display.BLACK, tempFont)
+draw.text((105, 34), tempF, inky_display.BLACK, font)
+
+# draw today's high and low temps to center on left side below date
+w, h = dateFont.getsize(tempsToday)
+x_temps = (inky_display.WIDTH / 4) - (w / 2)
+draw.text((x_temps, 45), tempsToday, inky_display.BLACK, font)
+
+# draw the current summary and conditions on the left side of the screen
+draw.text((3, 60), currentCondFormatted, inky_display.BLACK, font)
+
+# draw tomorrow's forecast on lower right
+draw.text((125, 55), day2, inky_display.BLACK, font)
+draw.text((125, 66), tempsDay2, inky_display.BLACK, smallFont)
+draw.text((125, 77), summary2Formatted, inky_display.BLACK, smallestFont)
+
+# prepare to draw the icon on the upper right side of the screen
+
+##def create_mask(source, mask=(inky_display.WHITE, inky_display.BLACK, inky_display.YELLOW)):
+##
+##    """ Creates a transparency mask if you need it
+##
+##       Takes a palletized source image and converts it into a mask
+##       permitting all the colours supported by Inky pHAT (0, 1, 2).
+##       This will allow the use of a mask in PIL for pasting in 
+##       the icon image with a transparent layer.
+##   """
+##
+##    mask_image = Image.new('1', source.size)
+##    w, h = source.size
+##    for x in range(w):
+##        for y in range(h):
+##            p = source.getpixel((x, y))
+##            if p in mask:
+##                mask_image.putpixel((x, y), 255)
+##
+##    return mask_image
+
+# Dictionaries to store our icons and icon masks 
+icons = {}
+# masks = {}
+
+# build the libary icon
+for icon in glob.glob('/home/pi/weatherDisplay/weather-icons/icon-*.png'):
+    # format the file name down to the text we need
+    # example: 'icon-fog.png' becomes 'fog'
+    # and gets put in the libary 
+    icon_name = icon.split('icon-')[1].replace('.png', '')
+    icon_image = Image.open(icon)
+    icons[icon_name] = icon_image
+
+##  masks[icon_name] = create_mask(icon_image)
+
+# Draw the current weather icon
+if iconDesc is not None:
+    img.paste(icons[iconDesc], (145, 2))        
+#      img.paste(icons[iconDesc], (145, 2), masks[iconDesc])
+else:
+    draw.text((140, 10), '?', inky_display.YELLOW, dayFont)
+
+
+# set up the image to push it
+inky_display.set_image(img)
+inky_display.set_border(inky_display.YELLOW)
+
+# push it all to the screen
+inky_display.show()
