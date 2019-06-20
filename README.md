@@ -13,5 +13,7 @@ If you are new to the Inky pHAT, you should read the Pimoroni pages about it [Ge
 - [Inky pHAT library](https://github.com/pimoroni/inky)
 - [darkyskylib](https://github.com/lukaskubis/darkskylib)
 
+## example
+![Image](inky-pHAT.png)
 
 
