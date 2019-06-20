@@ -37,6 +37,7 @@ with forecast (APIKEY, *LOCATION, units=UNITS) as location:
     lowTemp2 = location['daily']['data'][1]['temperatureLow']
 
 # format today's variables, current temp and high and low temps for the day
+#in both Celcius and Fahrenheit for old-timers and Americans
 temp = '{0:.0f}'.format(currentTemp) + '°'
 currentTempF = round((1.8 * currentTemp) + 32)
 tempF = str(currentTempF) + 'F'
@@ -72,7 +73,7 @@ currentCondFormatted = textwrap.fill(upcoming_conditions, 16)
 summary2Formatted = textwrap.fill(summary2, 18)
 iconFormatted = textwrap.fill(iconDesc, 7)
 
-# draw some lines to boix out tomorrow's forecast
+# draw some lines to box out tomorrow's forecast
 draw.line((118, 50, 118, 104),2, 4)
 draw.line((118, 50, 212, 50),2, 4)
 
@@ -84,7 +85,6 @@ dayDate = day_month_year
 draw.text((3, 25), dayDate, inky_display.BLACK, dateFont)
 
 #draw current temperature to right of day name and date
-#in both Celcius and Farhenhiet for old-timers
 draw.text((105, 8), temp, inky_display.BLACK, tempFont)
 draw.text((105, 34), tempF, inky_display.BLACK, font)
 
