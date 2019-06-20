@@ -20,4 +20,6 @@ Python3 Code to display current and near-term weather conditions on an Pimoroni 
 ## Example
 ![Image](inky-pHAT.png)
 
+## License
 
+GNU General Public License v3.0
