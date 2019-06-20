@@ -71,7 +71,6 @@ day2 = date.strftime(weekday2, '%A')
 # format the summary texts for today and tomorrow
 currentCondFormatted = textwrap.fill(upcoming_conditions, 16)
 summary2Formatted = textwrap.fill(summary2, 18)
-iconFormatted = textwrap.fill(iconDesc, 7)
 
 # draw some lines to box out tomorrow's forecast
 draw.line((118, 50, 118, 104),2, 4)
