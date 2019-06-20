@@ -52,12 +52,12 @@ img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
 
 # import the fonts and set sizes
-tempFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Aller_Bd.ttf', 22)
-dayFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Roboto-Black.ttf', 18)
-dateFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/Roboto-Bold.ttf', 14)
-font = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 10)
-smallFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 8)
-smallestFont = ImageFont.truetype('/home/pi/weatherDisplay/fonts/ElecSign.ttf', 7)
+tempFont = ImageFont.truetype('fonts/Aller_Bd.ttf', 22)
+dayFont = ImageFont.truetype('fonts/Roboto-Black.ttf', 18)
+dateFont = ImageFont.truetype('fonts/Roboto-Bold.ttf', 14)
+font = ImageFont.truetype('fonts/ElecSign.ttf', 10)
+smallFont = ImageFont.truetype('fonts/ElecSign.ttf', 8)
+smallestFont = ImageFont.truetype('fonts/ElecSign.ttf', 7)
 
 # define weekday text
 weekday = date.today()
@@ -102,11 +102,11 @@ draw.text((125, 66), tempsDay2, inky_display.BLACK, smallFont)
 draw.text((125, 77), summary2Formatted, inky_display.BLACK, smallestFont)
 
 # prepare to draw the icon on the upper right side of the screen
-# Dictionaries to store the icons
+# Dictionary to store the icons
 icons = {}
 
 # build the dictionary 'icons'
-for icon in glob.glob('/home/pi/weatherDisplay/weather-icons/icon-*.png'):
+for icon in glob.glob('weather-icons/icon-*.png'):
     # format the file name down to the text we need
     # example: 'icon-fog.png' becomes 'fog'
     # and gets put in the libary 
