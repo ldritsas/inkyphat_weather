@@ -4,7 +4,7 @@ Python3 Code to display current and near-term weather conditions on an Pimoroni 
 ## Acknowledgements
 - I took inspiration from Alan Cunningham's [Inky pHAT Dark Sky weather display](https://github.com/AlanCunningham/inkyphat-darksky-weather-display/) 
 - The icons are based on Adam Whitcroft’s [Climacons](http://adamwhitcroft.com/climacons/)
-  - I used Gimp to convert the Climacon images to the custom pallet that the inky pHAT requires.
+  - I used Gimp to convert the Climacon images to the custom pallet that the inky pHAT requires and to make the sun icons yellow, which is a neat effect and why I bought a yellow Inky pHAT from [Pimoroni](https://shop.pimoroni.com/products/inky-phat)
 - If you are new to the Inky pHAT, you should read the Pimoroni pages about it [Getting Started with Inky pHAT](https://learn.pimoroni.com/tutorial/sandyj/getting-started-with-inky-phat)
 
 ## Dependencies and requirements
