@@ -22,7 +22,11 @@ In both sets of codes there are a lot of different units, because I live in the 
 - I suggest creating a cron job that refreshes the screen every 15 minutes with new data. This is a lot simpler than it sounds, check [here](https://www.ostechnix.com/a-beginners-guide-to-cron-jobs/) for guidance. I did not see any benefit to more frequent requests.
 
 ## Example
+### phat_weather.py
 ![Image](inky-pHAT.png)
+
+### phat_weather_today.py
+![image](weather_today.png)
 
 ## License
 
