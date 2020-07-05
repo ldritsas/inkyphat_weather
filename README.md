@@ -12,6 +12,7 @@ Python3 code to display current and near-term weather conditions on an Pimoroni 
 - [Inky pHAT library](https://github.com/pimoroni/inky)
 - [darkyskylib](https://github.com/lukaskubis/darkskylib)
 - [Pillow](https://pillow.readthedocs.io/en/stable/) imaging library
+- Sadly Dark Sky has been bought by Apple. Free access to the API will stop working at the end of 2021. They are also not accepting new signups. I need to update my code to a new free API when I get a chance. If you don't already have a Dark Sky login, I hope you will find the rest of this code useful anyway. Read more about what happened to Dark Sky at https://blog.darksky.net/
 
 ## Tips
 - On your own system you may need to adjust the loction of the resource files (the fonts and icons, depending on where you put them). I found that I needed absolute links n the code to make it work properly.
