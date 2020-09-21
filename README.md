@@ -4,7 +4,7 @@ Python3 code to display current and near-term weather conditions on an Pimoroni 
 ## Darksky Update! Since Darksky was bought by Apple, they are not allowing new signups. I will update my code to something like Open Weather soon.
 
 ## UK units
-In both sets of codes there are a lot of different units, because I live in the UK, where we talk about temperature in Celcius, but windspeed in miles-per-hour. I've also incuded the temperature in Farhenheit units as well, because that makes more sense to me! 
+In both sets of codes there are a lot of different units, because I live in the UK, where we talk about temperature in Celcius, but windspeed in miles-per-hour. I've also incuded the temperature in Farhenheit units as well, because that makes more sense to me! In the second example 'Bft.' refers to the Beaufort scale, and the wind description is also taken from the Beaufort Scale.
 
 ## Acknowledgements
 - I took inspiration from Alan Cunningham's [Inky pHAT Dark Sky weather display](https://github.com/AlanCunningham/inkyphat-darksky-weather-display/) 
