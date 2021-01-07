@@ -24,6 +24,7 @@ In both sets of codes there are a lot of different units, because I live in the 
 
 - On your own system you may need to adjust the loction of the resource files (the fonts and icons, depending on where you put them). I found that I needed absolute links n the code to make it work properly.
 - I suggest creating a cron job that refreshes the screen every 15 minutes with new data. This is a lot simpler than it sounds, check [here](https://www.ostechnix.com/a-beginners-guide-to-cron-jobs/) for guidance. I did not see any benefit to more frequent requests.
+- If you don't want to run this as a super user, add your current user to the 'gpio' group with `sudo adduser $USER gpio`
 
 ## Example
 

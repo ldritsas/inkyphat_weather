@@ -7,6 +7,7 @@ from PIL import Image, ImageFont, ImageDraw
 from inky import InkyPHAT
 import glob
 import textwrap
+import logging
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,7 +26,7 @@ APIKEY = os.getenv("APIKEY")
 FAHRENHEIT = os.getenv("FAHRENHEIT")
 
 # set the colour of the phat: black, red or yellow
-INKY_COLOUR = os.getenv("INKY_COLOUR") | 'black'
+INKY_COLOUR = os.getenv("INKY_COLOUR")
 
 # set the colour of the phat: black, red or yellow
 inky_display = InkyPHAT(INKY_COLOUR)
@@ -56,29 +57,28 @@ weatherCode = {
     1101: "partly cloudy",
     1102: "mostly cloudy",
     2000: "fog",
-    2100: "light fog",
+    2100: "light fog",  # no icon
     3001: "wind",
-    3002: "strong wind",
-    4000: "drizzle",
+    3002: "strong wind",  # no icon
+    4000: "drizzle",  # no icon
     4001: "rain",
-    4200: "light rain",
-    4201: "heavy rain",
+    4200: "light rain",  # no icon
+    4201: "heavy rain",  # no icon
     5000: "snow",
-    5001: "flurries",
-    5100: "light snow",
-    5101: "heavy snow",
-    6000: "freezing drizzle",
-    6001: "freezing rain",
-    6200: "light freezing rain",
-    6201: "heavy freezing rain",
-    7000: "ice pellets",
-    7101: "heavy ice pellets",
-    7102: "light ice pellets",
-    8000: "thunderstorm"
+    5001: "sleet",
+    5100: "light snow",  # no icon
+    5101: "heavy snow",  # no icon
+    6000: "freezing drizzle",  # no icon
+    6001: "freezing rain",  # no icon
+    6200: "light freezing rain",  # no icon
+    6201: "heavy freezing rain",  # no icon
+    7000: "ice pellets",  # no icon
+    7101: "heavy ice pellets",  # no icon
+    7102: "light ice pellets",  # no icon
+    8000: "thunderstorm"  # no icon
 }
 
 # Get data from Climacell
-
 
 # fields for climacell:
 # https://docs.climacell.co/reference/data-layers-overview#field-availability
@@ -86,12 +86,11 @@ weatherCode = {
 fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity', 'epaIndex',
           'pressureSurfaceLevel', 'windDirection', 'windGust', 'windSpeed', 'dewPoint']
 queryParams = {'location': LOCATION,
-               'fields': ','.join(fields), 'timesteps': '1d'}
+               'fields': ','.join(fields), 'timesteps': '1m'}
 r = requests.get('https://data.climacell.co/v4/timelines', params=queryParams,
                  headers={'apikey': APIKEY})
 if r.status_code == 200:
     today = r.json()['data']['timelines'][0]['intervals'][0]['values']
-    tomorrow = r.json()['data']['timelines'][0]['intervals'][1]['values']
 
     currentTemp = today['temperature']
     relativeHumidity = today['humidity']
@@ -100,25 +99,22 @@ if r.status_code == 200:
     windBearing = today['windDirection']
     pressure = today['pressureSurfaceLevel']
     dewPoint = today['dewPoint']
+    epaIndex = today['epaIndex']
 
     upcoming_conditions = weatherCode[today['weatherCode']]
     iconDesc = weatherCode[today['weatherCode']]
     highTemp = today['temperatureMax']
     lowTemp = today['temperatureMin']
 
-    # tomorrow
-    summary2 = weatherCode[tomorrow['weatherCode']]
-    highTemp2 = tomorrow['temperatureMax']
-    lowTemp2 = tomorrow['temperatureMin']
 else:
-    print(f"Error: {r.status_code}: {r.json()['message']}")
+    logging.critical(f"Error: {r.status_code}: {r.json()['message']}")
     # If you find an error, print it to the display.
     img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
     draw = ImageDraw.Draw(img)
     draw.text(
         (3, 3), f'Error @{datetime.now().strftime("%H:%M:%S")}', inky_display.BLACK, dayFont)
-    draw.text((3, 25), textwrap.wrap(
-        r.json()['message'], width=20), inky_display.BLACK, dateFont)
+    draw.text((3, 25), textwrap.fill(
+        r.json()['message'], width=30), inky_display.BLACK, dateFont)
     inky_display.set_image(img)
     inky_display.set_border(inky_display.YELLOW)
     inky_display.show()
@@ -238,6 +234,8 @@ draw.text((3, 44), tempsToday, inky_display.BLACK, dateFont)
 
 # draw the current summary and conditions on the left side of the screen
 draw.text((3, 60), currentCondFormatted, inky_display.BLACK, font)
+draw.text((3, 76), f'AQI: {epaIndex}',
+          inky_display.BLACK if epaIndex < 100 else inky_display.RED, font)
 
 # draw a line to separate out the additional data
 draw.line((119, 49, 119, 104), 2, 4)
@@ -260,14 +258,22 @@ for icon in glob.glob(f'{current_dir}/weather-icons/icon-*.png'):
     icons[icon_name] = icon_image
 
 
-# Draw the current weather icon
-if iconDesc is not None:
-    img.paste(icons[iconDesc], (145, 2))
-
+try:
+    # Draw the current weather icon
+    if iconDesc is not None:
+        img.paste(icons[iconDesc], (145, 2))
+except:
+    logging.warning('No icon found for weather pattern')
 
 # set up the image to push it
 inky_display.set_image(img)
-inky_display.set_border(inky_display.YELLOW)
+
+if INKY_COLOUR == 'red':
+    inky_display.set_border(inky_display.RED)
+elif INKY_COLOUR == 'yellow':
+    inky_display.set_border(inky_display.YELLOW)
+else:
+    inky_display.set_border(inky_display.BLACK)
 
 # push it all to the screen
 inky_display.show()
