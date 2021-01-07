@@ -9,12 +9,6 @@ import glob
 # a programme to display today's weather and tomorrow
 # on the inky_display
 
-
-# set the colour of the phat: black, red or yellow
-inky_display = InkyPHAT('red')
-# rotate inky so the plugs are on the top. comment to unflip.
-inky_display.rotation = 90
-
 # set lat/long for location
 # put your longitude and latitude here in decimal degrees
 LOCATION = ""
@@ -25,7 +19,32 @@ APIKEY = ""
 # Want to use fahrenheit? set to true.
 FAHRENHEIT = True
 
-# fields for climacell: https://docs.climacell.co/reference/data-layers-overview#field-availability
+# set the colour of the phat: black, red or yellow
+INKY_COLOUR = 'red'
+
+# set the colour of the phat: black, red or yellow
+inky_display = InkyPHAT(INKY_COLOUR)
+# rotate inky so the plugs are on the top. comment to unflip.
+inky_display.rotation = 90
+
+# import our fonts
+current_dir = pathlib.Path(__file__).parent
+tempFont = ImageFont.truetype(f'{current_dir}/fonts/Aller_Bd.ttf', 22)
+dayFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Black.ttf', 18)
+iconFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Medium.ttf', 16)
+dateFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Bold.ttf', 14)
+font = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Regular.ttf', 12)
+smallFont = ImageFont.truetype(f'{current_dir}/fonts/ElecSign.ttf', 8)
+smallestFont = ImageFont.truetype(
+    f'{current_dir}/fonts/ElecSign.ttf', 7)
+
+
+# fields for climacell:
+# https://docs.climacell.co/reference/data-layers-overview#field-availability
 
 weatherCode = {
     0: "unknown",
@@ -36,7 +55,6 @@ weatherCode = {
     1102: "mostly cloudy",
     2000: "fog",
     2100: "light fog",
-    3000: "light wind",
     3001: "wind",
     3002: "strong wind",
     4000: "drizzle",
@@ -86,7 +104,16 @@ if r.status_code == 200:
     highTemp2 = tomorrow['temperatureMax']
     lowTemp2 = tomorrow['temperatureMin']
 else:
-    print("Error: %s: %s", r.status_code, r.text)
+    print(f"Error: {r.status_code}: {r.json()['message']}")
+    # If you find an error, print it to the display.
+    img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
+    draw = ImageDraw.Draw(img)
+    draw.text((3, 3), "Error", inky_display.BLACK, dayFont)
+    draw.text((3, 25), r.json()['message'], inky_display.BLACK, dateFont)
+    inky_display.set_image(img)
+    inky_display.set_border(inky_display.YELLOW)
+    inky_display.show()
+    quit()
 
 
 def toF(C): return round((1.8 * C) + 32)
@@ -172,28 +199,11 @@ wind = str(windSpeed) + ' ' + compassDir + gust
 # prepare info for line 3 which is dewpoint and  wind gusts
 line3 = 'Bft.' + str(Beaufort) + ' ' + dewPoint
 
-
 # This imports three classes from PIL that we'll need, creates a new blank
 # image, img, that is the width and height of the Inky pHAT display,
 # and then creates a drawing canvas, draw, to which we can draw text and graphics
 img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
-
-current_dir = pathlib.Path(__file__).parent
-
-# import our fonts
-tempFont = ImageFont.truetype(f'{current_dir}/fonts/Aller_Bd.ttf', 22)
-dayFont = ImageFont.truetype(
-    f'{current_dir}/fonts/Roboto-Black.ttf', 18)
-iconFont = ImageFont.truetype(
-    f'{current_dir}/fonts/Roboto-Medium.ttf', 16)
-dateFont = ImageFont.truetype(
-    f'{current_dir}/fonts/Roboto-Bold.ttf', 14)
-font = ImageFont.truetype(
-    f'{current_dir}/fonts/Roboto-Regular.ttf', 12)
-smallFont = ImageFont.truetype(f'{current_dir}/fonts/ElecSign.ttf', 8)
-smallestFont = ImageFont.truetype(
-    f'{current_dir}/fonts/ElecSign.ttf', 7)
 
 # define weekday text
 weekday = date.today()
