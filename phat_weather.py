@@ -1,123 +1,248 @@
-# a programme to display today's weather and tomorrow
-# on the inky_display using Lukas Kubis's Python wrapper
-# for the Dark Sky API https://github.com/lukaskubis/darkskylib 
-
-import glob
-from inky import InkyPHAT
-from PIL import Image, ImageFont, ImageDraw
-import datetime
-from datetime import date, timedelta
-from darksky import forecast
+import pathlib
+import requests
 import textwrap
+from datetime import date, timedelta
+import datetime
+from PIL import Image, ImageFont, ImageDraw
+from inky import InkyPHAT
+import glob
+# a programme to display today's weather and tomorrow
+# on the inky_display
+
 
 # set the colour of the phat: black, red or yellow
-inky_display = InkyPHAT('your_colour')
+inky_display = InkyPHAT('red')
+# rotate inky so the plugs are on the top. comment to unflip.
+inky_display.rotation = 90
 
 # set lat/long for location
-LOCATION = #put your longitude and latittude here in decimal degrees
-UNITS = '?' #specify the units you want your results in here, see the Dark Sky API docs page for details 
+# put your longitude and latitude here in decimal degrees
+LOCATION = ""
 
-# set Darksky API Key
-APIKEY= '?' # put your Dark Sky API key here. Get one at https://darksky.net/dev
+# Get an api key for climacell here: https://www.climacell.co/weather-api/
+APIKEY = ""
 
-# Get data from DarkSky
-with forecast (APIKEY, *LOCATION, units=UNITS) as location:
-    # today
-    currentTemp = location['currently']['temperature']
-    upcoming_conditions = location['minutely']['summary']
-    relativeHumidity = location['currently']['humidity']
-    highTemp = location['daily']['data'][0]['temperatureHigh']
-    lowTemp = location['daily']['data'][0]['temperatureLow']
-    iconDesc = location['currently']['icon']
-  
-    # tomorrow 
-    summary2 = location['daily']['data'][1]['summary']
-    iconDesc2 = location['daily']['data'][1]['icon']
-    highTemp2 = location['daily']['data'][1]['temperatureHigh']
-    lowTemp2 = location['daily']['data'][1]['temperatureLow']
+# Want to use fahrenheit? set to true.
+FAHRENHEIT = True
 
-# format today's variables, current temp and high and low temps for the day
-#in both Celcius and Fahrenheit for old-timers and Americans
-temp = '{0:.0f}'.format(currentTemp) + '°'
-currentTempF = round((1.8 * currentTemp) + 32)
-tempF = str(currentTempF) + 'F'
-tempsToday = 'High ' + '{0:.0f}'.format(highTemp) + ' Low ' + '{0:.0f}'.format(lowTemp)
-  
-# format tomorrow's variables 
-tempsDay2 = 'High ' + '{0:.0f}'.format(highTemp2) + ' Low ' + '{0:.0f}'.format(lowTemp2)
+# fields for climacell: https://docs.climacell.co/reference/data-layers-overview#field-availability
 
-# Create a new blank image, img, of type P 
-# that is the width and height of the Inky pHAT display,
-# then create a drawing canvas, draw, to which we can draw text and graphics
+weatherCode = {
+    0: "unknown",
+    1000: "clear",
+    1001: "cloudy",
+    1100: "mostly clear",
+    1101: "partly cloudy",
+    1102: "mostly cloudy",
+    2000: "fog",
+    2100: "light fog",
+    3000: "light wind",
+    3001: "wind",
+    3002: "strong wind",
+    4000: "drizzle",
+    4001: "rain",
+    4200: "light rain",
+    4201: "heavy rain",
+    5000: "snow",
+    5001: "flurries",
+    5100: "light snow",
+    5101: "heavy snow",
+    6000: "freezing drizzle",
+    6001: "freezing rain",
+    6200: "light freezing rain",
+    6201: "heavy freezing rain",
+    7000: "ice pellets",
+    7101: "heavy ice pellets",
+    7102: "light ice pellets",
+    8000: "thunderstorm"
+}
+
+# Get data from Climacell
+fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity',
+          'pressureSurfaceLevel', 'windDirection', 'windGust', 'windSpeed', 'dewPoint']
+queryParams = {'location': LOCATION,
+               'fields': ','.join(fields), 'timesteps': '1d'}
+r = requests.get('https://data.climacell.co/v4/timelines', params=queryParams,
+                 headers={'apikey': APIKEY})
+if r.status_code == 200:
+    today = r.json()['data']['timelines'][0]['intervals'][0]['values']
+    tomorrow = r.json()['data']['timelines'][0]['intervals'][1]['values']
+
+    currentTemp = today['temperature']
+    relativeHumidity = today['humidity']
+    windSpeed = today['windSpeed']
+    windGust = today['windGust']
+    windBearing = today['windDirection']
+    pressure = today['pressureSurfaceLevel']
+    dewPoint = today['dewPoint']
+
+    upcoming_conditions = weatherCode[today['weatherCode']]
+    iconDesc = weatherCode[today['weatherCode']]
+    highTemp = today['temperatureMax']
+    lowTemp = today['temperatureMin']
+
+    # tomorrow
+    summary2 = weatherCode[tomorrow['weatherCode']]
+    highTemp2 = tomorrow['temperatureMax']
+    lowTemp2 = tomorrow['temperatureMin']
+else:
+    print("Error: %s: %s", r.status_code, r.text)
+
+
+def toF(C): return round((1.8 * C) + 32)
+
+
+if FAHRENHEIT:
+    temp = str(toF(currentTemp)) + '°'
+    altTemp = str(round(currentTemp)) + 'C'
+    highTemp = toF(highTemp)
+    lowTemp = toF(lowTemp)
+    dewPoint = toF(dewPoint)
+else:
+    temp = round(currentTemp)
+    temp = str(temp) + '°'
+    altTemp = str(toF(currentTemp)) + 'F'
+    highTemp = round(highTemp)
+    lowTemp = round(lowTemp)
+    dewPoint = round(dewPoint)
+
+tempsToday = 'Low ' + str(lowTemp) + ' High ' + str(highTemp)
+dewPoint = ' dew ' + str(dewPoint) + 'F' if FAHRENHEIT else 'C'
+
+# format today's variables to current temp and high and low temps for the day
+
+pressure = round(pressure)
+pressure = str(pressure) + ' hPa'
+
+# convert the wind bearing to a compass direction using a tuple of 16 compass points
+# and format the other wind information. We need to do windBearing  modulo 360 first
+# to allow for 0 degree bearing.
+windDir = ('N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N')
+windBearing = windBearing % 360
+windIndex = round(windBearing / 45)
+compassDir = windDir[windIndex]
+windSpeed = round(windSpeed)
+windGust = round(windGust)
+gust = ' gust ' + str(windGust)
+
+# determine Beaufort scale number and wind description from wind speed
+if windSpeed < 1:
+    windDesc = 'Calm'
+    Beaufort = - 0
+elif (windSpeed >= 1 and windSpeed <= 3):
+    windDesc = 'Light Air'
+    Beaufort = 1
+elif windSpeed <= 7:
+    windDesc = 'Light Breeze'
+    Beaufort = 2
+elif windSpeed <= 12:
+    windDesc = 'Gentle Breeze'
+    Beaufort = 3
+elif windSpeed <= 18:
+    windDesc = 'Moderate Breeze'
+    Beaufort = 4
+elif windSpeed <= 24:
+    windDesc = 'Fresh Breeze'
+    Beaufort = 5
+elif windSpeed <= 31:
+    windDesc = 'Strong Breeze'
+    Beaufort = 6
+elif windSpeed <= 38:
+    windDesc = 'Near Gale'
+    Beaufort = 7
+elif windSpeed <= 46:
+    windDesc = 'Gale'
+    Beaufort = 8
+elif windSpeed <= 54:
+    windDesc = 'Strong Gale'
+    Beaufort = 9
+elif windSpeed <= 63:
+    windDesc = 'Storm'
+    Beaufort = 10
+elif windSpeed <= 72:
+    windDesc = 'Violent Storm'
+    Beaufort = 11
+else:
+    windDesc = 'Hurricane'
+    Beaufort = 12
+
+# prepare info for  line about the wind speed and Beaufort scale
+wind = str(windSpeed) + ' ' + compassDir + gust
+
+# prepare info for line 3 which is dewpoint and  wind gusts
+line3 = 'Bft.' + str(Beaufort) + ' ' + dewPoint
+
+
+# This imports three classes from PIL that we'll need, creates a new blank
+# image, img, that is the width and height of the Inky pHAT display,
+# and then creates a drawing canvas, draw, to which we can draw text and graphics
 img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
 
-# import the fonts and set sizes
-tempFont = ImageFont.truetype('fonts/Aller_Bd.ttf', 22)
-dayFont = ImageFont.truetype('fonts/Roboto-Black.ttf', 18)
-dateFont = ImageFont.truetype('fonts/Roboto-Bold.ttf', 14)
-font = ImageFont.truetype('fonts/ElecSign.ttf', 10)
-smallFont = ImageFont.truetype('fonts/ElecSign.ttf', 8)
-smallestFont = ImageFont.truetype('fonts/ElecSign.ttf', 7)
+current_dir = pathlib.Path(__file__).parent
+
+# import our fonts
+tempFont = ImageFont.truetype(f'{current_dir}/fonts/Aller_Bd.ttf', 22)
+dayFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Black.ttf', 18)
+iconFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Medium.ttf', 16)
+dateFont = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Bold.ttf', 14)
+font = ImageFont.truetype(
+    f'{current_dir}/fonts/Roboto-Regular.ttf', 12)
+smallFont = ImageFont.truetype(f'{current_dir}/fonts/ElecSign.ttf', 8)
+smallestFont = ImageFont.truetype(
+    f'{current_dir}/fonts/ElecSign.ttf', 7)
 
 # define weekday text
 weekday = date.today()
 day_Name = date.strftime(weekday, '%A')
-day_month_year = date.strftime(weekday, '%-d %B %y')
+day_month = date.strftime(weekday, '%-d %B')
 
-weekday2 = datetime.date.today() + datetime.timedelta(days=1)
-day2 = date.strftime(weekday2, '%A')
+# format the summary texts for today
+currentCondFormatted = textwrap.fill(upcoming_conditions, 19, max_lines=4)
 
-# format the summary texts for today and tomorrow
-currentCondFormatted = textwrap.fill(upcoming_conditions, 16)
-summary2Formatted = textwrap.fill(summary2, 18)
-
-# draw some lines to box out tomorrow's forecast
-draw.line((118, 50, 118, 104),2, 4)
-draw.line((118, 50, 212, 50),2, 4)
-
-# draw today's name on top left side
+# draw today's name on left side
 draw.text((3, 3), day_Name, inky_display.BLACK, dayFont)
 
 # draw today's date on left side below today's name
-dayDate = day_month_year
+dayDate = day_month
 draw.text((3, 25), dayDate, inky_display.BLACK, dateFont)
 
-#draw current temperature to right of day name and date
+# draw current temperature to right of day name and date. C and F
 draw.text((105, 8), temp, inky_display.BLACK, tempFont)
-draw.text((105, 34), tempF, inky_display.BLACK, font)
+draw.text((105, 34), altTemp, inky_display.BLACK, font)
 
-# draw today's high and low temps to center on left side below date
-w, h = dateFont.getsize(tempsToday)
-x_temps = (inky_display.WIDTH / 4) - (w / 2)
-draw.text((x_temps, 45), tempsToday, inky_display.BLACK, font)
+# draw today's high and low temps on left side below date
+draw.text((3, 44), tempsToday, inky_display.BLACK, dateFont)
 
 # draw the current summary and conditions on the left side of the screen
-draw.text((3, 60), currentCondFormatted, inky_display.BLACK, smallFont)
+draw.text((3, 60), currentCondFormatted, inky_display.BLACK, font)
 
-# draw tomorrow's forecast in lower right box
-draw.text((125, 55), day2, inky_display.BLACK, font)
-draw.text((125, 66), tempsDay2, inky_display.BLACK, smallFont)
-draw.text((125, 77), summary2Formatted, inky_display.BLACK, smallestFont)
+# draw a line to separate out the additional data
+draw.line((119, 49, 119, 104), 2, 4)
 
-# prepare to draw the icon on the upper right side of the screen
-# Dictionary to store the icons
+# draw dewpoint and wind data on lower right
+draw.text((124, 51), windDesc, inky_display.BLACK, font)
+draw.text((124, 64), wind, inky_display.BLACK, font)
+draw.text((124, 77), line3, inky_display.BLACK, font)
+draw.text((124, 90), pressure, inky_display.BLACK, font)
+
+# Dictionary to store our icons
 icons = {}
 
-# build the dictionary 'icons'
-for icon in glob.glob('weather-icons/icon-*.png'):
+# Load our icon image files and generate masks
+for icon in glob.glob(f'{current_dir}/weather-icons/icon-*.png'):
     # format the file name down to the text we need
     # example: 'icon-fog.png' becomes 'fog'
-    # and gets put in the libary 
     icon_name = icon.split('icon-')[1].replace('.png', '')
     icon_image = Image.open(icon)
     icons[icon_name] = icon_image
 
-# Draw the current weather icon top in top right
+# Draw the current weather icon
 if iconDesc is not None:
-    img.paste(icons[iconDesc], (145, 2))        
-else:
-    draw.text((140, 10), '?', inky_display.YELLOW, dayFont)
+    img.paste(icons[iconDesc], (145, 2))
 
 
 # set up the image to push it
