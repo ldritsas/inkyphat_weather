@@ -12,7 +12,7 @@ import logging
 from dotenv import load_dotenv
 load_dotenv()
 
-# a programme to display today's weather and tomorrow
+# a programme to display now's weather and tomorrow
 # on the inky_display
 
 # set lat/long for location
@@ -82,39 +82,66 @@ weatherCode = {
 
 # fields for climacell:
 # https://docs.climacell.co/reference/data-layers-overview#field-availability
+try:
+    fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity', 'epaIndex',
+              'pressureSurfaceLevel', 'windDirection', 'windGust', 'windSpeed', 'dewPoint']
+    queryParams = {'location': LOCATION,
+                   'fields': ','.join(fields), 'timesteps': '1m'}
+    nowRequest = requests.get('https://data.climacell.co/v4/timelines', params=queryParams,
+                              headers={'apikey': APIKEY})
+    now = nowRequest.json()['data']['timelines'][0]['intervals'][0]['values']
 
-fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity', 'epaIndex',
-          'pressureSurfaceLevel', 'windDirection', 'windGust', 'windSpeed', 'dewPoint']
-queryParams = {'location': LOCATION,
-               'fields': ','.join(fields), 'timesteps': '1m'}
-r = requests.get('https://data.climacell.co/v4/timelines', params=queryParams,
-                 headers={'apikey': APIKEY})
-if r.status_code == 200:
-    today = r.json()['data']['timelines'][0]['intervals'][0]['values']
+    currentTemp = now['temperature']
+    relativeHumidity = now['humidity']
+    windSpeed = now['windSpeed']
+    windGust = now['windGust']
+    windBearing = now['windDirection']
+    pressure = now['pressureSurfaceLevel']
+    dewPoint = now['dewPoint']
+    epaIndex = now['epaIndex']
 
-    currentTemp = today['temperature']
-    relativeHumidity = today['humidity']
-    windSpeed = today['windSpeed']
-    windGust = today['windGust']
-    windBearing = today['windDirection']
-    pressure = today['pressureSurfaceLevel']
-    dewPoint = today['dewPoint']
-    epaIndex = today['epaIndex']
+    upcoming_conditions = weatherCode[now['weatherCode']]
+    iconDesc = weatherCode[now['weatherCode']]
 
-    upcoming_conditions = weatherCode[today['weatherCode']]
-    iconDesc = weatherCode[today['weatherCode']]
-    highTemp = today['temperatureMax']
-    lowTemp = today['temperatureMin']
-
-else:
-    logging.critical(f"Error: {r.status_code}: {r.json()['message']}")
+except:
+    logging.critical(
+        f"Error: {nowRequest.status_code}: {nowRequest.json()['message']}")
     # If you find an error, print it to the display.
     img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
     draw = ImageDraw.Draw(img)
     draw.text(
         (3, 3), f'Error @{datetime.now().strftime("%H:%M:%S")}', inky_display.BLACK, dayFont)
     draw.text((3, 25), textwrap.fill(
-        r.json()['message'], width=30), inky_display.BLACK, dateFont)
+        nowRequest.json()['message'], width=30), inky_display.BLACK, dateFont)
+    inky_display.set_image(img)
+    inky_display.set_border(inky_display.YELLOW)
+    inky_display.show()
+    quit()
+
+try:
+    # for min-max values we need to use the 1d timestep
+    fields = ['temperatureMin', 'temperatureMax']
+    queryParams = {'location': LOCATION,
+                   'fields': ','.join(fields), 'timesteps': '1d'}
+    todayRequest = requests.get('https://data.climacell.co/v4/timelines', params=queryParams,
+                                headers={'apikey': APIKEY})
+
+    highTemp = todayRequest.json()[
+        'data']['timelines'][0]['intervals'][0]['values']['temperatureMax']
+    lowTemp = todayRequest.json()[
+        'data']['timelines'][0]['intervals'][0]['values']['temperatureMin']
+
+except:
+    # TODO: doubling this error mechanism isn't very DRY
+    logging.critical(
+        f"Error: {todayRequest.status_code}: {todayRequest.json()['message']}")
+    # If you find an error, print it to the display.
+    img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
+    draw = ImageDraw.Draw(img)
+    draw.text(
+        (3, 3), f'Error @{datetime.now().strftime("%H:%M:%S")}', inky_display.BLACK, dayFont)
+    draw.text((3, 25), textwrap.fill(
+        todayRequest.json()['message'], width=30), inky_display.BLACK, dateFont)
     inky_display.set_image(img)
     inky_display.set_border(inky_display.YELLOW)
     inky_display.show()
@@ -138,10 +165,10 @@ else:
     lowTemp = round(lowTemp)
     dewPoint = round(dewPoint)
 
-tempsToday = 'Low ' + str(lowTemp) + ' High ' + str(highTemp)
+tempsnow = 'Low ' + str(lowTemp) + ' High ' + str(highTemp)
 dewPoint = ' dew ' + str(dewPoint) + 'F' if FAHRENHEIT else 'C'
 
-# format today's variables to current temp and high and low temps for the day
+# format now's variables to current temp and high and low temps for the day
 
 pressure = round(pressure)
 pressure = str(pressure) + ' hPa'
@@ -211,17 +238,17 @@ img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
 
 # define weekday text
-weekday = date.today()
+weekday = date.now()
 day_Name = date.strftime(weekday, '%A')
 day_month = date.strftime(weekday, '%-d %B')
 
-# format the summary texts for today
+# format the summary texts for now
 currentCondFormatted = textwrap.fill(upcoming_conditions, 19, max_lines=4)
 
-# draw today's name on left side
+# draw now's name on left side
 draw.text((3, 3), day_Name, inky_display.BLACK, dayFont)
 
-# draw today's date on left side below today's name
+# draw now's date on left side below now's name
 dayDate = day_month
 draw.text((3, 25), dayDate, inky_display.BLACK, dateFont)
 
@@ -229,8 +256,8 @@ draw.text((3, 25), dayDate, inky_display.BLACK, dateFont)
 draw.text((105, 8), temp, inky_display.BLACK, tempFont)
 draw.text((105, 34), altTemp, inky_display.BLACK, font)
 
-# draw today's high and low temps on left side below date
-draw.text((3, 44), tempsToday, inky_display.BLACK, dateFont)
+# draw now's high and low temps on left side below date
+draw.text((3, 44), tempsnow, inky_display.BLACK, dateFont)
 
 # draw the current summary and conditions on the left side of the screen
 draw.text((3, 60), currentCondFormatted, inky_display.BLACK, font)
