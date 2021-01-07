@@ -1,26 +1,31 @@
+import os
 import pathlib
 import requests
 import textwrap
-from datetime import date, timedelta
-import datetime
+from datetime import date, timedelta, datetime
 from PIL import Image, ImageFont, ImageDraw
 from inky import InkyPHAT
 import glob
+import textwrap
+
+from dotenv import load_dotenv
+load_dotenv()
+
 # a programme to display today's weather and tomorrow
 # on the inky_display
 
 # set lat/long for location
 # put your longitude and latitude here in decimal degrees
-LOCATION = ""
+LOCATION = os.getenv("LOCATION")
 
 # Get an api key for climacell here: https://www.climacell.co/weather-api/
-APIKEY = ""
+APIKEY = os.getenv("APIKEY")
 
 # Want to use fahrenheit? set to true.
-FAHRENHEIT = True
+FAHRENHEIT = os.getenv("FAHRENHEIT")
 
 # set the colour of the phat: black, red or yellow
-INKY_COLOUR = 'red'
+INKY_COLOUR = os.getenv("INKY_COLOUR") | 'black'
 
 # set the colour of the phat: black, red or yellow
 inky_display = InkyPHAT(INKY_COLOUR)
@@ -42,9 +47,6 @@ smallFont = ImageFont.truetype(f'{current_dir}/fonts/ElecSign.ttf', 8)
 smallestFont = ImageFont.truetype(
     f'{current_dir}/fonts/ElecSign.ttf', 7)
 
-
-# fields for climacell:
-# https://docs.climacell.co/reference/data-layers-overview#field-availability
 
 weatherCode = {
     0: "unknown",
@@ -76,7 +78,12 @@ weatherCode = {
 }
 
 # Get data from Climacell
-fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity',
+
+
+# fields for climacell:
+# https://docs.climacell.co/reference/data-layers-overview#field-availability
+
+fields = ['temperature', 'temperatureMin', 'temperatureMax', 'weatherCode', 'humidity', 'epaIndex',
           'pressureSurfaceLevel', 'windDirection', 'windGust', 'windSpeed', 'dewPoint']
 queryParams = {'location': LOCATION,
                'fields': ','.join(fields), 'timesteps': '1d'}
@@ -108,8 +115,10 @@ else:
     # If you find an error, print it to the display.
     img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
     draw = ImageDraw.Draw(img)
-    draw.text((3, 3), "Error", inky_display.BLACK, dayFont)
-    draw.text((3, 25), r.json()['message'], inky_display.BLACK, dateFont)
+    draw.text(
+        (3, 3), f'Error @{datetime.now().strftime("%H:%M:%S")}', inky_display.BLACK, dayFont)
+    draw.text((3, 25), textwrap.wrap(
+        r.json()['message'], width=20), inky_display.BLACK, dateFont)
     inky_display.set_image(img)
     inky_display.set_border(inky_display.YELLOW)
     inky_display.show()
@@ -249,6 +258,7 @@ for icon in glob.glob(f'{current_dir}/weather-icons/icon-*.png'):
     icon_name = icon.split('icon-')[1].replace('.png', '')
     icon_image = Image.open(icon)
     icons[icon_name] = icon_image
+
 
 # Draw the current weather icon
 if iconDesc is not None:
