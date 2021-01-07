@@ -12,7 +12,7 @@ import logging
 from dotenv import load_dotenv
 load_dotenv()
 
-# a programme to display now's weather and tomorrow
+# a programme to display today's weather and tomorrow
 # on the inky_display
 
 # set lat/long for location
@@ -238,7 +238,7 @@ img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
 
 # define weekday text
-weekday = date.now()
+weekday = date.today()
 day_Name = date.strftime(weekday, '%A')
 day_month = date.strftime(weekday, '%-d %B')
 
