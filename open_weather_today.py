@@ -12,6 +12,7 @@ import textwrap
 import requests
 import json
 
+project_location = '/home/dietpi/inkyphat_weather'
 # set the colour of the phat
 inky_display = InkyPHAT('yellow')
 #invert the screen (power cable on top) if needed.
@@ -23,11 +24,11 @@ lat = 55.7132
 lon = -3.2041
 
 # set OpenWeather API Key
-APIKEY = '76b2e43df6c0a01472a0547298c8fbc4'
+APIKEY = '<api_key>'
 
 ##request data from OpenWeather 'One Call' API
 url = (
-    f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&"
+    f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&"
     f"units=metric&appid={APIKEY}")
 r = requests.get(url)
 weather_data = json.loads(r.text)
@@ -36,20 +37,20 @@ weather_data = json.loads(r.text)
 with open('weather_text.json', 'w') as f:
   json.dump(weather_data, f, indent=2)
   f.close()
-
+print(weather_data)
 # # Get data needed from downloaded data
-temp = weather_data['current']['temp']
-current_conditions = weather_data['current']['weather'][0]['description']
-icon_code = weather_data['current']['weather'][0]['icon']
-icon_desc = weather_data['current']['weather'][0]['main']
-relative_humidity = weather_data['current']['humidity']
-dew_point = weather_data['current']['dew_point']
-wind_speed = weather_data['current']['wind_speed']
-wind_gust = weather_data['current']['wind_gust']
-wind_bearing = weather_data['current']['wind_deg']
-pressure = weather_data['current']['pressure']
-high_temp = weather_data['daily'][0]['temp']['max']
-low_temp = weather_data['daily'][0]['temp']['min']
+temp = weather_data['main']['temp']
+current_conditions = weather_data['weather'][0]['description']
+icon_code = weather_data['weather'][0]['icon']
+icon_desc = weather_data['weather'][0]['main']
+relative_humidity = weather_data['main']['humidity']
+dew_point = 0 #weather_data['main']['dew_point']
+wind_speed = weather_data['wind']['speed']
+wind_gust = weather_data['wind']['gust']
+wind_bearing = weather_data['wind']['deg']
+pressure = weather_data['main']['pressure']
+high_temp = weather_data['main']['temp_max']
+low_temp = weather_data['main']['temp_min']
 
 # format today's variables to current temp and high and low temps for the day
 current_temp = round(temp)
@@ -58,7 +59,7 @@ current_temp_F = round((1.8 * temp) + 32)
 current_temp_F = str(current_temp_F) + 'F'
 high_temp = round(high_temp)
 low_temp = round(low_temp)
-temps_today = 'Low ' + str(low_temp) + ' High ' + str(high_temp)  
+temps_today = 'Low ' + str(low_temp) + ' High ' + str(high_temp)
 dew_point = round(dew_point)
 dew_point = ' dew ' + str(dew_point) + 'C'
 pressure = round(pressure)
@@ -74,7 +75,7 @@ wind_index = round(wind_bearing/ 45)
 compass_dir = wind_dir[wind_index]
 
 # format windspeeds, convert metres/second to mph and round
-wind_speed = (wind_speed * 2.237) 
+wind_speed = (wind_speed * 2.237)
 wind_speed = round(wind_speed)
 wind_gust = (wind_gust * 2.237)
 wind_gust = round(wind_gust)
@@ -125,29 +126,29 @@ gust = ' gust ' + str(wind_gust)
 wind = str(wind_speed) + ' ' + compass_dir + gust
 
 # # prepare info for line 3 which is Beaufort scale and dewpoint and
-line3 = 'Bft.' + str(Beaufort) + ' ' + dew_point 
+line3 = 'Bft.' + str(Beaufort) + ' ' + dew_point
 
 # This imports three classes from PIL that we'll need, creates a new blank
-# image 'img', that is the width and height of the Inky pHAT display, and then 
+# image 'img', that is the width and height of the Inky pHAT display, and then
 # creates a drawing canvas, 'draw', to which we can draw text and graphics
 img = Image.new('P', (inky_display.WIDTH, inky_display.HEIGHT))
 draw = ImageDraw.Draw(img)
 
 # import our fonts
-temp_font = ImageFont.truetype('/home/pi/openWeather/fonts/Aller_Bd.ttf', 22)
-day_font = ImageFont.truetype('/home/pi/openWeather/fonts/Roboto-Black.ttf', 18)
-icon_font = ImageFont.truetype('/home/pi/openWeather/fonts/Roboto-Medium.ttf', 16)
-date_font = ImageFont.truetype('/home/pi/openWeather/fonts/Roboto-Bold.ttf', 14)
-font = ImageFont.truetype('/home/pi/openWeather/fonts/Roboto-Regular.ttf', 12)
-small_font = ImageFont.truetype('/home/pi/openWeather/fonts/ElecSign.ttf', 8)
-smallest_font = ImageFont.truetype('/home/pi/openWeather/fonts/ElecSign.ttf', 7)
+temp_font = ImageFont.truetype(f'{project_location}/fonts/Aller_Bd.ttf', 22)
+day_font = ImageFont.truetype(f'{project_location}/fonts/Roboto-Black.ttf', 18)
+icon_font = ImageFont.truetype(f'{project_location}/fonts/Roboto-Regular.ttf', 16)
+date_font = ImageFont.truetype(f'{project_location}/fonts/Roboto-Bold.ttf', 14)
+font = ImageFont.truetype(f'{project_location}/fonts/Roboto-Regular.ttf', 12)
+small_font = ImageFont.truetype(f'{project_location}/fonts/ElecSign.ttf', 8)
+smallest_font = ImageFont.truetype(f'{project_location}/fonts/ElecSign.ttf', 7)
 
 # define weekday text
 weekday = date.today()
 day_name = date.strftime(weekday, '%A')
 day_month = date.strftime(weekday, '%-d %B')
 
-# format the summary texts for today 
+# format the summary texts for today
 current_conditions = textwrap.fill(current_conditions, 19, max_lines=4)
 
 # draw today's name on left side
@@ -180,11 +181,11 @@ draw.text((124, 90), pressure, inky_display.BLACK, font)
 icons = {}
 
 # iterate through a list of the the weather icon file names
-for icon in os.listdir('/home/pi/openWeather/openWeather_icons/'):
-    # build a list of the split file name's components 
+for icon in os.listdir(f'{project_location}/weather_icons/'):
+    # build a list of the split file name's components
     icon_filename = icon.split('.')
     # use PIL module to id and open the current image file in the for loop
-    icon_image = Image.open(f'openWeather_icons/{icon}')
+    icon_image = Image.open(f'{project_location}/weather_icons/{icon}')
     # assign the opened image file to the filename key in the dictionary {icons}
     # this key is the bit of the filename before the '.'
     icons[icon_filename[0]] = icon_image
@@ -192,7 +193,7 @@ for icon in os.listdir('/home/pi/openWeather/openWeather_icons/'):
 # Draw the current weather icon using the current icon code as the key to
 # the dictionary of images we've just created
 if icon_code is not None:
-    img.paste(icons[icon_code], (145, 2))  
+    img.paste(icons[icon_code], (145, 2))
 
 
 # # set up the image to push it
