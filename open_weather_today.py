@@ -23,7 +23,7 @@ lat = 55.7132
 lon = -3.2041
 
 # set OpenWeather API Key
-APIKEY = '76b2e43df6c0a01472a0547298c8fbc4'
+APIKEY = 'add your key here'
 
 ##request data from OpenWeather 'One Call' API
 url = (
